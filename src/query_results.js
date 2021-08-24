@@ -102,26 +102,28 @@ module.exports = class QueryResult {
     const cachedQueryResult = new Map();
 
     queryResult.forEach((record) => {
-      const inputNodeID = helper._getInputID(record);
-      const outputNodeID = helper._getOutputID(record);
-
-      if (this.cachedQueryResults.length === 0 || previousOutputNodeIDs.has(inputNodeID)) {
-        let cachedRecordsForOutputNodeID;
-        if (cachedQueryResult.has(outputNodeID)) {
-          cachedRecordsForOutputNodeID = cachedQueryResult.get(outputNodeID);
-        } else {
-          cachedRecordsForOutputNodeID = [];
-          cachedQueryResult.set(outputNodeID, cachedRecordsForOutputNodeID);
+      if (record) {
+        const inputNodeID = helper._getInputID(record);
+        const outputNodeID = helper._getOutputID(record);
+  
+        if (this.cachedQueryResults.length === 0 || previousOutputNodeIDs.has(inputNodeID)) {
+          let cachedRecordsForOutputNodeID;
+          if (cachedQueryResult.has(outputNodeID)) {
+            cachedRecordsForOutputNodeID = cachedQueryResult.get(outputNodeID);
+          } else {
+            cachedRecordsForOutputNodeID = [];
+            cachedQueryResult.set(outputNodeID, cachedRecordsForOutputNodeID);
+          }
+  
+          cachedRecordsForOutputNodeID.push({
+            inputQueryNodeID: helper._getInputQueryNodeID(record),
+            inputNodeID: inputNodeID,
+            queryEdgeID: record.$edge_metadata.trapi_qEdge_obj.getID(),
+            kgEdgeID: helper._getKGEdgeID(record),
+            outputQueryNodeID: helper._getOutputQueryNodeID(record),
+            outputNodeID: outputNodeID,
+          });
         }
-
-        cachedRecordsForOutputNodeID.push({
-          inputQueryNodeID: helper._getInputQueryNodeID(record),
-          inputNodeID: inputNodeID,
-          queryEdgeID: record.$edge_metadata.trapi_qEdge_obj.getID(),
-          kgEdgeID: helper._getKGEdgeID(record),
-          outputQueryNodeID: helper._getOutputQueryNodeID(record),
-          outputNodeID: outputNodeID,
-        });
       }
     });
 

@@ -1,118 +1,166 @@
 const QNode = require("../../src/query_node");
 const QEdge = require("../../src/query_edge");
-const KnowledgeGraph = require("../../src/knowledge_graph");
+const KnowledgeGraph = require("../../src/graph/knowledge_graph");
 
 describe("Testing KnowledgeGraph Module", () => {
-    const gene_node1 = new QNode("n1", { categories: "Gene", ids: "NCBIGene:1017" });
-    const chemical_node1 = new QNode("n3", { categories: "SmallMolecule" });
-    const edge1 = new QEdge("e01", { subject: gene_node1, object: chemical_node1 });
-    const record = {
-        "$edge_metadata": {
-            trapi_qEdge_obj: edge1,
-            source: "DGIdb",
-            api_name: "BioThings DGIDB API"
-        },
-        "publications": ['PMID:123', 'PMID:1234'],
-        "interactionType": "inhibitor",
-        "$input": {
-            original: "SYMBOL:CDK2",
-            obj: [{
-                primaryID: 'NCBIGene:1017',
-                label: "CDK2",
-                dbIDs: {
-                    SYMBOL: "CDK2",
-                    NCBIGene: "1017"
-                },
-                semanticType: "Gene",
-                curies: ['SYMBOL:CDK2', 'NCBIGene:1017']
-            }]
-        },
-        "$output": {
-            original: "CHEMBL.COMPOUND:CHEMBL744",
-            obj: [{
-                primaryID: 'CHEMBL.COMPOUND:CHEMBL744',
-                label: "RILUZOLE",
-                dbIDs: {
-                    "CHEMBL.COMPOUND": "CHEMBL744",
-                    "PUBCHEM": "1234",
-                    "name": "RILUZOLE"
-                },
-                semanticType: "SmallMolecule",
-                curies: ['CHEMBL.COMPOUND:CHEMBL744', 'PUBCHEM:1234', "name:RILUZOLE"]
-            }]
-        },
+    const nodeInput = {
+        "id": "PUBCHEM.COMPOUND:2662-n0",
+        "_primaryID": "PUBCHEM.COMPOUND:2662",
+        "_qgID": "n0",
+        "_curies": [
+            "PUBCHEM.COMPOUND:2662",
+            "CHEMBL.COMPOUND:CHEMBL118",
+            "UNII:JCX84Q7J1L",
+            "CHEBI:41423",
+            "DRUGBANK:DB00482",
+            "MESH:C105934",
+            "MESH:D000068579",
+            "CAS:169590-42-5",
+            "CAS:184007-95-2",
+            "CAS:194044-54-7",
+            "DrugCentral:568",
+            "GTOPDB:2892",
+            "HMDB:HMDB0005014",
+            "KEGG.COMPOUND:C07589",
+            "INCHIKEY:RZEKVGVHFLEQIL-UHFFFAOYSA-N"
+        ],
+        "_names": [
+            "Celecoxib",
+            "CELECOXIB",
+            "celecoxib",
+            "[OBSOLETE] celecoxib"
+        ],
+        "_semanticType": "SmallMolecule",
+        "_nodeAttributes": {},
+        "_label": "Celecoxib",
+        "_sourceNodes": {},
+        "_targetNodes": {},
+        "_sourceQGNodes": {},
+        "_targetQGNodes": {}
     }
-    describe("Testing _createInputNode function", () => {
-        test("test when input with string, should output a hash of 40 characters", () => {
+    const trapiEdgeInput = {
+        id: 'PUBCHEM.COMPOUND:2662-biolink:activity_decreased_by-NCBIGene:771',
+        predicate: 'biolink:activity_decreased_by',
+        subject: 'PUBCHEM.COMPOUND:2662',
+        object: 'NCBIGene:771',
+        apis: {},
+        sources: {},
+        publications: {},
+        attributes: {
+            attributes: [
+                {
+                    attribute_type_id: 'biolink:Attribute',
+                    value: 'Ki',
+                    value_type_id: 'EDAM:data_0006',
+                    original_attribute_name: 'affinity_parameter',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+                {
+                    attribute_type_id: 'biolink:knowledge_source',
+                    value: ['PHAROS_1_norm_edges.jsonl'],
+                    value_type_id: 'EDAM:data_0006',
+                    original_attribute_name: 'knowledge_source',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+                {
+                    attribute_type_id: 'biolink:aggregator_knowledge_source',
+                    value: ['infores:pharos'],
+                    value_type_id: 'biolink:InformationResource',
+                    original_attribute_name: 'biolink:aggregator_knowledge_source',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+                {
+                    attribute_type_id: 'biolink:Attribute',
+                    value: 7.75,
+                    value_type_id: 'EDAM:data_0006',
+                    original_attribute_name: 'affinity',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+                {
+                    attribute_type_id: 'biolink:publications',
+                    value: [
+                        'PMID:20605094',
+                        'PMID:21852133',
+                        'PMID:16290146',
+                        'PMID:23965175',
+                        'PMID:23965175',
+                        'PMID:24513184',
+                        'PMID:25766630',
+                        'PMID:23067387',
+                    ],
+                    value_type_id: 'EDAM:data_0006',
+                    original_attribute_name: 'publications',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+                {
+                    attribute_type_id: 'biolink:relation',
+                    value: 'GAMMA:ki',
+                    value_type_id: 'EDAM:data_0006',
+                    original_attribute_name: 'relation',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+                {
+                    attribute_type_id: 'biolink:aggregator_knowledge_source',
+                    value: 'infores:automat.pharos',
+                    value_type_id: 'biolink:InformationResource',
+                    original_attribute_name: 'biolink:aggregator_knowledge_source',
+                    value_url: null,
+                    attribute_source: null,
+                    description: null,
+                },
+            ],
+        },
+    };
+    
+    describe("Testing _createNode function", () => {
+        test("test creating node", () => {
             const kg = new KnowledgeGraph();
-            const res = kg._createInputNode(record);
-            expect(res).toHaveProperty("categories", "biolink:Gene");
-            expect(res).toHaveProperty("name", "CDK2");
-            expect(res.attributes[0]).toHaveProperty("type", "biolink:id");
-            expect(res.attributes[0]).toHaveProperty("value", ["SYMBOL:CDK2", "NCBIGene:1017"])
-        })
-    })
-
-    describe("Testing _createOutputNode function", () => {
-        test("test when input with string, should output a hash of 40 characters", () => {
-            const kg = new KnowledgeGraph();
-            const res = kg._createOutputNode(record);
-            expect(res).toHaveProperty("categories", "biolink:SmallMolecule");
-            expect(res).toHaveProperty("name", "RILUZOLE");
-            expect(res.attributes[0]).toHaveProperty("type", "biolink:id");
-            expect(res.attributes[0]).toHaveProperty("value", ['CHEMBL.COMPOUND:CHEMBL744', 'PUBCHEM:1234', "name:RILUZOLE"])
+            const res = kg._createNode(nodeInput);
+            expect(res).toHaveProperty("name", "Celecoxib");
+            expect(res).toHaveProperty('categories')
+            expect(res.categories[0]).toBe('biolink:SmallMolecule');
+            expect(res).toHaveProperty('attributes');
         })
     })
 
     describe("Testing _createAttributes function", () => {
-        test("test edge attribute provided_by and api are correctly found", () => {
+        test("test edge attributes", () => {
             const kg = new KnowledgeGraph();
-            const res = kg._createAttributes(record);
-            expect(res.length).toBeGreaterThanOrEqual(2);
-            expect(res[0]).toHaveProperty("name", "provided_by");
-            expect(res[0]).toHaveProperty("type", "biolink:provided_by");
-            expect(res[0]).toHaveProperty("value", "DGIdb");
-            expect(res[1]).toHaveProperty("name", "api");
-            expect(res[1]).toHaveProperty("type", "bts:api");
-            expect(res[1]).toHaveProperty("value", "BioThings DGIDB API");
-        })
-
-        test("test edge attribute other than provided_by and api are correctly found", () => {
-            const kg = new KnowledgeGraph();
-            const res = kg._createAttributes(record);
-            expect(res.length).toBeGreaterThan(2);
-            expect(res[2]).toHaveProperty("name", "publications");
-            expect(res[2]).toHaveProperty("type", "biolink:publications");
-            expect(res[2]).toHaveProperty("value", ['PMID:123', 'PMID:1234']);
-            expect(res[3]).toHaveProperty("name", "interactionType");
-            expect(res[3]).toHaveProperty("type", "bts:interactionType");
-            expect(res[3]).toHaveProperty("value", 'inhibitor');
+            const res = kg._createAttributes(trapiEdgeInput);
+            expect(res.length).toBeGreaterThan(0);
+            for (let res_obj of res) {
+                expect(res_obj).toHaveProperty('attribute_type_id');
+                expect(res_obj).toHaveProperty('value');
+                expect(res_obj).toHaveProperty('value_type_id');
+            }
         })
     })
 
     describe("Testing _createEdge function", () => {
-        test("test edge attribute provided_by and api are correctly found", () => {
+        test("test creating edge", () => {
             const kg = new KnowledgeGraph();
-            const res = kg._createAttributes(record);
-            expect(res.length).toBeGreaterThanOrEqual(2);
-            expect(res[0]).toHaveProperty("name", "provided_by");
-            expect(res[0]).toHaveProperty("type", "biolink:provided_by");
-            expect(res[0]).toHaveProperty("value", "DGIdb");
-            expect(res[1]).toHaveProperty("name", "api");
-            expect(res[1]).toHaveProperty("type", "bts:api");
-            expect(res[1]).toHaveProperty("value", "BioThings DGIDB API");
-        })
-
-        test("test edge attribute other than provided_by and api are correctly found", () => {
-            const kg = new KnowledgeGraph();
-            const res = kg._createAttributes(record);
-            expect(res.length).toBeGreaterThan(2);
-            expect(res[2]).toHaveProperty("name", "publications");
-            expect(res[2]).toHaveProperty("type", "biolink:publications");
-            expect(res[2]).toHaveProperty("value", ['PMID:123', 'PMID:1234']);
-            expect(res[3]).toHaveProperty("name", "interactionType");
-            expect(res[3]).toHaveProperty("type", "bts:interactionType");
-            expect(res[3]).toHaveProperty("value", 'inhibitor');
+            const res = kg._createEdge(trapiEdgeInput);
+            expect(res).toHaveProperty("predicate", "biolink:activity_decreased_by");
+            expect(res).toHaveProperty("subject", "PUBCHEM.COMPOUND:2662");
+            expect(res).toHaveProperty("object", "NCBIGene:771");
+            expect(res).toHaveProperty("attributes");
+            for (let res_obj of res.attributes) {
+                expect(res_obj).toHaveProperty('attribute_type_id');
+                expect(res_obj).toHaveProperty('value');
+                expect(res_obj).toHaveProperty('value_type_id');
+            }
         })
     })
 

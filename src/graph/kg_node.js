@@ -4,6 +4,7 @@ module.exports = class KGNode {
     this._primaryID = info.primaryID;
     this._qgID = info.qgID;
     this._curies = info.equivalentIDs;
+    this._names = info.names;
     this._semanticType = info.category;
     this._nodeAttributes = info.nodeAttributes;
     this._label = info.label;

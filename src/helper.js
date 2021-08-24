@@ -97,11 +97,31 @@ module.exports = class QueryGraphHelper {
     }
   }
 
+  _getInputNames(record) {
+    try {
+      return record.$edge_metadata.trapi_qEdge_obj.isReversed()
+        ? record.$output.obj[0].dbIDs.name
+        : record.$input.obj[0].dbIDs.name;
+    } catch (err) {
+      return null;
+    }
+  }
+
   _getInputAttributes(record) {
     try {
       return record.$edge_metadata.trapi_qEdge_obj.isReversed()
         ? record.$output.obj[0].attributes
         : record.$input.obj[0].attributes;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  _getOutputNames(record) {
+    try {
+      return record.$edge_metadata.trapi_qEdge_obj.isReversed()
+        ? record.$input.obj[0].dbIDs.name
+        : record.$output.obj[0].dbIDs.name;
     } catch (err) {
       return null;
     }
@@ -116,6 +136,7 @@ module.exports = class QueryGraphHelper {
       return null;
     }
   }
+
 
   _getOutputAttributes(record) {
     try {
