@@ -15,7 +15,7 @@ module.exports = class Graph {
   update(queryResult) {
     debug(`Updating BTE Graph now.`);
     const bteAttributes = ['name', 'label', 'id', 'api', 'provided_by', 'publications'];
-    queryResult.map((record) => {
+    queryResult.length && queryResult.map((record) => {
       const inputPrimaryID = this.helper._getInputID(record);
       const inputQGID = this.helper._getInputQueryNodeID(record);
       const inputID = inputPrimaryID + '-' + inputQGID;

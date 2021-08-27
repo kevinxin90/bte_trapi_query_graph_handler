@@ -66,6 +66,34 @@ module.exports = class NodesUpdateHandler {
     return;
   }
 
+  async setEquivalentIDs_2(qEdges) {
+    debug(`Getting equivalent IDs...`);
+    const curies = this._getCuries(this.qEdges);
+    // if (Object.keys(curies).length === 0) {
+    //   debug(`update nodes based on previous query results!`);
+    //   qEdges.map((edge) => {
+    //     edge.input_equivalent_identifiers = edge.prev_edge.output_equivalent_identifiers;
+    //   });
+    //   return;
+    // }
+    debug(`curies: ${JSON.stringify(curies)}`);
+    const equivalentIDs = await this._getEquivalentIDs(curies);
+    qEdges.map((edge) => {
+      // debug(`Edge input curie is ${edge.getInputCurie()}`);
+      const edgeEquivalentIDs = Object.keys(equivalentIDs)
+        .filter((key) => edge.getInputCurie().includes(key))
+        .reduce((res, key) => {
+          return { ...res, [key]: equivalentIDs[key] };
+        }, {});
+        debug(`Got Edge Equivalent IDs successfully.`);
+      // debug(`Edge Equivalent IDs are: ${JSON.stringify(edgeEquivalentIDs)}`);
+      if (Object.keys(edgeEquivalentIDs).length > 0) {
+        edge.input_equivalent_identifiers = edgeEquivalentIDs;
+      }
+    });
+    return;
+  }
+
   _createEquivalentIDsObject(record) {
     if (record.$output.obj !== undefined) {
       return {

@@ -120,7 +120,7 @@ module.exports = class QEdge2BTEEdgeHandler {
     const inputID = smartAPIEdge.association.input_id;
     const inputType = smartAPIEdge.association.input_type;
     let resolvedIDs = smartAPIEdge.reasoner_edge.input_equivalent_identifiers;
-    debug(`Resolved ids: ${JSON.stringify(resolvedIDs)}`);
+    // debug(`Resolved ids: ${JSON.stringify(resolvedIDs)}`);
     debug(`Input id: ${inputID}`);
     for (const curie in resolvedIDs) {
       resolvedIDs[curie].map((entity) => {
@@ -173,6 +173,8 @@ module.exports = class QEdge2BTEEdgeHandler {
     let bteEdges = [];
     qEdges.map((edge) => {
       const smartapi_edges = this._getSmartAPIEdges(edge);
+      let apis = smartapi_edges.map(api => api.association.api_name);
+      debug(`APIs being used: ${JSON.stringify([...new Set(apis)])}`);
       debug(`${smartapi_edges.length} SmartAPI edges are retrieved....`);
       smartapi_edges.map((item) => {
         let newEdges = this._createBTEEdges(item);

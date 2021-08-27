@@ -33,7 +33,7 @@ module.exports = class BatchEdgeQueryHandler {
    * @private
    */
   _expandBTEEdges(bteEdges) {
-    debug(`BTE EDGE ${JSON.stringify(this.qEdges)}`);
+    // debug(`BTE EDGE ${JSON.stringify(this.qEdges)}`);
     return bteEdges;
   }
 
@@ -107,9 +107,50 @@ module.exports = class BatchEdgeQueryHandler {
   }
 
   async query(qEdges) {
+    debug('Node Update Start');
     const nodeUpdate = new NodesUpdateHandler(qEdges);
     await nodeUpdate.setEquivalentIDs(qEdges);
+    debug('Node Update Success');
     const cacheHandler = new CacheHandler(qEdges, this.caching);
+    const { cachedResults, nonCachedEdges } = await cacheHandler.categorizeEdges(qEdges);
+    this.logs = [...this.logs, ...cacheHandler.logs];
+    let query_res;
+
+    if (nonCachedEdges.length === 0) {
+      query_res = [];
+    } else {
+      debug('Start to convert qEdges into BTEEdges....');
+      const edgeConverter = new QEdge2BTEEdgeHandler(nonCachedEdges, this.kg);
+      const bteEdges = edgeConverter.convert(nonCachedEdges);
+      debug(`qEdges are successfully converted into ${bteEdges.length} BTEEdges....`);
+      this.logs = [...this.logs, ...edgeConverter.logs];
+      if (bteEdges.length === 0 && cachedResults.length === 0) {
+        return [];
+      }
+      const expanded_bteEdges = this._expandBTEEdges(bteEdges);
+      debug('Start to query BTEEdges....');
+      query_res = await this._queryBTEEdges(expanded_bteEdges);
+      debug('BTEEdges are successfully queried....');
+      await cacheHandler.cacheEdges(query_res);
+    }
+    query_res = [...query_res, ...cachedResults];
+    const processed_query_res = await this._postQueryFilter(query_res);
+    debug(`Total number of response is ${processed_query_res.length}`);
+    debug('Start to update nodes,hi.');
+    nodeUpdate.update(processed_query_res);
+    debug('update nodes completed');
+    return processed_query_res;
+  }
+
+  async query_2(qEdges) {
+    debug('Node Update Start');
+    //it's now a single edge but convert to arr to simplify refactoring
+    qEdges = Array.isArray(qEdges) ? qEdges : [qEdges];
+    const nodeUpdate = new NodesUpdateHandler(qEdges);
+    //difference is there is no previous edge info anymore
+    await nodeUpdate.setEquivalentIDs_2(qEdges);
+    debug('Node Update Success');
+    const cacheHandler = new CacheHandler(qEdges);
     const { cachedResults, nonCachedEdges } = await cacheHandler.categorizeEdges(qEdges);
     this.logs = [...this.logs, ...cacheHandler.logs];
     let query_res;
