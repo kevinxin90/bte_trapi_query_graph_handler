@@ -116,8 +116,8 @@ export default class TRAPIQueryHandler {
       })}`,
     );
 
-    if (this.options.metakg) {
-      const metaKG = new MetaKG(undefined, undefined, (this.options as any).metakg);
+    if (this.options.metakg_ops) {
+      const metaKG = new MetaKG(undefined, undefined, (this.options as any).metakg_ops);
       metaKG.filterKG(this.options);
       return metaKG;
     }
@@ -722,8 +722,12 @@ export default class TRAPIQueryHandler {
       return;
     }
     debug('MetaKG successfully loaded!');
-
+    const filteredOps = metaKG.ops.filter(op => 
+      op.association.qualifiers && 
+      Object.values(op.association.qualifiers).some(value => Array.isArray(value))
+    )
     span1?.finish();
+    // metaKG.ops = filteredOps;
 
     if (global.missingAPIs) {
       this.logs.push(
