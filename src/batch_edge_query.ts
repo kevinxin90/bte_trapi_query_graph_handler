@@ -2,7 +2,7 @@ import call_api from '@biothings-explorer/call-apis';
 import { redisClient } from '@biothings-explorer/utils';
 import QEdge2APIEdgeHandler, { APIEdge } from './qedge2apiedge';
 import NodesUpdateHandler from './update_nodes';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 const debug = Debug('bte:biothings-explorer-trapi:batch_edge_query');
 import CacheHandler from './cache_handler';
 import { threadId } from 'worker_threads';

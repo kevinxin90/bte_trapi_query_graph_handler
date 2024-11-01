@@ -1,6 +1,6 @@
 import { LogEntry, StampedLog } from '@biothings-explorer/utils';
 import { TrapiResult } from '@biothings-explorer/types';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import { zip } from 'lodash';
 const debug = Debug('bte:biothings-explorer-trapi:QueryResult');
 import { getScores, calculateScore, ScoreCombos } from './score';

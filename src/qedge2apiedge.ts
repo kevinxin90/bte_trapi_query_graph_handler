@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { LogEntry, StampedLog } from '@biothings-explorer/utils';
 import * as config from './config';
 const CURIE_WITH_PREFIXES = ['MONDO', 'DOID', 'UBERON', 'EFO', 'HP', 'CHEBI', 'CL', 'MGI', 'NCIT'];
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import QEdge from './query_edge';
 import MetaKG from '@biothings-explorer/smartapi-kg';
 import { SmartAPIKGOperationObject } from '@biothings-explorer/smartapi-kg';
