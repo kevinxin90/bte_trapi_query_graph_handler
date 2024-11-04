@@ -87,7 +87,7 @@ export default class InferredQueryHandler {
     this.CREATIVE_LIMIT = process.env.CREATIVE_LIMIT ? parseInt(process.env.CREATIVE_LIMIT) : 500;
     this.CREATIVE_TIMEOUT = process.env.CREATIVE_TIMEOUT_S
       ? parseInt(process.env.CREATIVE_TIMEOUT) * 1000
-      : 4.75 * 60 * 1000;
+      : 4.50 * 60 * 1000;
   }
 
   get queryIsValid(): boolean {
