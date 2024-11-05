@@ -81,7 +81,7 @@ export default class TRAPIQueryHandler {
     if (this.options.smartapi) {
       smartapiRegistry = this.options.smartapi;
     } else {
-      smartapiRegistry = await lockWithActionAsync(this.path, async () => {
+      smartapiRegistry = await lockWithActionAsync([this.path], async () => {
         const file = await fs.readFile(this.path, 'utf-8');
         const hits = JSON.parse(file);
         return hits;
@@ -127,7 +127,7 @@ export default class TRAPIQueryHandler {
 
     const metaKG = new MetaKG(this.path, this.predicatePath);
     debug(`SmartAPI Specs read from path: ${this.path}`);
-    metaKG.constructMetaKGSync(this.includeReasoner, this.options);
+    await metaKG.constructMetaKGWithFileLock(this.includeReasoner, this.options);
     return metaKG;
   }
 
