@@ -14,7 +14,15 @@
                     "subject": "creativeQuerySubject",
                     "object": "creativeQueryObject",
                     "predicates": [
-                        "biolink:treats"
+                        "biolink:applied_to_treat"
+                    ],
+                    "attribute_constraints": [
+                        {
+                          "name": "evidence_count_constraint",
+                          "id": "biolink:evidence_count",
+                          "operator": ">",
+                          "value": 20
+                        }
                     ]
                 }
             }

@@ -10,6 +10,8 @@
               ],
     "templates": [
       "Chem-treats-DoP.json",
+      "Chem-applied_to_treat-DoP.json",
+      "Chem-in_clinical_trials_for-DoP.json",
       "Chem-treats-PhenoOfDisease.json",
       "Chem-regulates,affects-Gene-biomarker,associated_condition-DoP.json"
     ]
