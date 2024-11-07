@@ -119,8 +119,8 @@ export default class TRAPIQueryHandler {
       })}`,
     );
 
-    if (this.options.metakg_ops) {
-      const metaKG = new MetaKG(undefined, undefined, (this.options as any).metakg_ops);
+    if (this.options.metakg) {
+      const metaKG = new MetaKG(undefined, undefined, (this.options as any).metakg);
       metaKG.filterKG(this.options);
       return metaKG;
     }
