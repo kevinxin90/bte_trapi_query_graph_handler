@@ -10,7 +10,7 @@ import Graph from './graph/graph';
 import EdgeManager from './edge_manager';
 import _ from 'lodash';
 import QEdge2APIEdgeHandler from './qedge2apiedge';
-import { LogEntry, StampedLog } from '@biothings-explorer/utils';
+import { lockWithActionAsync, LogEntry, StampedLog } from '@biothings-explorer/utils';
 import { promises as fs } from 'fs';
 import { getDescendants } from '@biothings-explorer/node-expansion';
 import { resolveSRI, SRINodeNormFailure } from 'biomedical_id_resolver';
@@ -81,8 +81,11 @@ export default class TRAPIQueryHandler {
     if (this.options.smartapi) {
       smartapiRegistry = this.options.smartapi;
     } else {
-      const file = await fs.readFile(this.path, 'utf-8');
-      smartapiRegistry = JSON.parse(file);
+      smartapiRegistry = await lockWithActionAsync([this.path], async () => {
+        const file = await fs.readFile(this.path, 'utf-8');
+        const hits = JSON.parse(file);
+        return hits;
+      }, debug);
     }
 
     const smartapiIds: string[] = [];
@@ -124,7 +127,7 @@ export default class TRAPIQueryHandler {
 
     const metaKG = new MetaKG(this.path, this.predicatePath);
     debug(`SmartAPI Specs read from path: ${this.path}`);
-    metaKG.constructMetaKGSync(this.includeReasoner, this.options);
+    await metaKG.constructMetaKGWithFileLock(this.includeReasoner, this.options);
     return metaKG;
   }
 
@@ -722,7 +725,6 @@ export default class TRAPIQueryHandler {
       return;
     }
     debug('MetaKG successfully loaded!');
-
     span1?.finish();
 
     if (global.missingAPIs) {
