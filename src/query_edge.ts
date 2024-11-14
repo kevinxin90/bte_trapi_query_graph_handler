@@ -5,7 +5,7 @@ import QNode from './query_node';
 import { QNodeInfo } from './query_node';
 import * as utils from '@biothings-explorer/utils';
 import { LogEntry, StampedLog } from '@biothings-explorer/utils';
-import { TrapiAttributeConstraint, TrapiQualifierConstraint } from '@biothings-explorer/types';
+import { TrapiAttribute, TrapiAttributeConstraint, TrapiKGEdge, TrapiKGNode, TrapiQualifierConstraint } from '@biothings-explorer/types';
 
 const debug = Debug('bte:biothings-explorer-trapi:QEdge');
 
@@ -31,6 +31,7 @@ interface QEdgeInfo {
   executed?: boolean;
   reverse?: boolean;
   qualifier_constraints?: TrapiQualifierConstraint[];
+  attribute_constraints?: TrapiAttributeConstraint[];
   frozen?: boolean;
   predicates?: string[];
 }
@@ -50,6 +51,7 @@ export default class QEdge {
   object: QNode;
   expanded_predicates: string[];
   qualifier_constraints: TrapiQualifierConstraint[];
+  constraints: TrapiAttributeConstraint[];
   reverse: boolean;
   executed: boolean;
   logs: StampedLog[];
@@ -63,6 +65,7 @@ export default class QEdge {
     this.object = info.frozen === true ? new QNode(info.object as QNodeInfo) : (info.object as QNode);
     this.expanded_predicates = [];
     this.qualifier_constraints = info.qualifier_constraints || [];
+    this.constraints = info.attribute_constraints || [];
 
     this.reverse = this.subject?.getCurie?.() === undefined && this.object?.getCurie?.() !== undefined;
 
@@ -350,188 +353,12 @@ export default class QEdge {
     !this.reverse ? this.subject.updateCuries(combined_curies_2) : this.object.updateCuries(combined_curies_2);
   }
 
-  applyNodeConstraints(): void {
-    debug(`(6) Applying Node Constraints to ${this.records.length} records.`);
-    const kept = [];
-    let save_kept = false;
-    const sub_constraints = this.subject.constraints;
-    if (sub_constraints && sub_constraints.length) {
-      const from = this.reverse ? 'object' : 'subject';
-      debug(`Node (subject) constraints: ${JSON.stringify(sub_constraints)}`);
-      save_kept = true;
-      for (let i = 0; i < this.records.length; i++) {
-        const res = this.records[i];
-        let keep = true;
-        // apply constraints
-        for (let x = 0; x < sub_constraints.length; x++) {
-          const constraint = sub_constraints[x];
-          keep = this.meetsConstraint(constraint, res, from);
-        }
-        // pass or not
-        if (keep) {
-          kept.push(res);
-        }
-      }
-    }
-
-    const obj_constraints = this.object.constraints;
-    if (obj_constraints && obj_constraints.length) {
-      const from = this.reverse ? 'subject' : 'object';
-      debug(`Node (object) constraints: ${JSON.stringify(obj_constraints)}`);
-      save_kept = true;
-      for (let i = 0; i < this.records.length; i++) {
-        const res = this.records[i];
-        let keep = true;
-        // apply constraints
-        for (let x = 0; x < obj_constraints.length; x++) {
-          const constraint = obj_constraints[x];
-          keep = this.meetsConstraint(constraint, res, from);
-        }
-        // pass or not
-        if (keep) {
-          kept.push(res);
-        }
-      }
-    }
-    if (save_kept) {
-      // only override recordss if there was any filtering done.
-      this.records = kept;
-      debug(`(6) Reduced to (${this.records.length}) records.`);
-    } else {
-      debug(`(6) No constraints. Skipping...`);
-    }
-  }
-
-  meetsConstraint(constraint: TrapiAttributeConstraint, record: Record, from: string): boolean {
-    // list of attribute ids in node
-    const available_attributes = [...new Set(Object.keys(record[from].attributes))];
-    // debug(`ATTRS ${JSON.stringify(record[from].normalizedInfo[0]._leafSemanticType)}` +
-    // ` ${from} : ${JSON.stringify(available_attributes)}`);
-    // determine if node even contains right attributes
-    const filters_found = available_attributes.filter((attr) => attr == constraint.id);
-    if (!filters_found.length) {
-      // node doesn't have the attribute needed
-      return false;
-    } else {
-      // match attr by name, parse only attrs of interest
-      const node_attributes = {};
-      filters_found.forEach((filter) => {
-        node_attributes[filter] = record[from].attributes[filter];
-      });
-      switch (constraint.operator) {
-        case '==':
-          for (const key in node_attributes) {
-            if (!isNaN(constraint.value as number)) {
-              if (Array.isArray(node_attributes[key])) {
-                if (
-                  node_attributes[key].includes(constraint.value) ||
-                  node_attributes[key].includes(constraint.value.toString())
-                ) {
-                  return true;
-                }
-              } else {
-                if (
-                  node_attributes[key] == constraint.value ||
-                  node_attributes[key] == constraint.value.toString() ||
-                  node_attributes[key] == parseInt(constraint.value as string)
-                ) {
-                  return true;
-                }
-              }
-            } else {
-              if (Array.isArray(node_attributes[key])) {
-                if (node_attributes[key].includes(constraint.value)) {
-                  return true;
-                }
-              } else {
-                if (
-                  node_attributes[key] == constraint.value ||
-                  node_attributes[key] == constraint.value.toString() ||
-                  node_attributes[key] == parseInt(constraint.value as string)
-                ) {
-                  return true;
-                }
-              }
-            }
-          }
-          return false;
-        case '>':
-          for (const key in node_attributes) {
-            if (Array.isArray(node_attributes[key])) {
-              for (let index = 0; index < node_attributes[key].length; index++) {
-                const element = node_attributes[key][index];
-                if (parseInt(element) > parseInt(constraint.value as string)) {
-                  return true;
-                }
-              }
-            } else {
-              if (parseInt(node_attributes[key]) > parseInt(constraint.value as string)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        case '>=':
-          for (const key in node_attributes) {
-            if (Array.isArray(node_attributes[key])) {
-              for (let index = 0; index < node_attributes[key].length; index++) {
-                const element = node_attributes[key][index];
-                if (parseInt(element) >= parseInt(constraint.value as string)) {
-                  return true;
-                }
-              }
-            } else {
-              if (parseInt(node_attributes[key]) >= parseInt(constraint.value as string)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        case '<':
-          for (const key in node_attributes) {
-            if (Array.isArray(node_attributes[key])) {
-              for (let index = 0; index < node_attributes[key].length; index++) {
-                const element = node_attributes[key][index];
-                if (parseInt(element) > parseInt(constraint.value as string)) {
-                  return true;
-                }
-              }
-            } else {
-              if (parseInt(node_attributes[key]) < parseInt(constraint.value as string)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        case '<=':
-          for (const key in node_attributes) {
-            if (Array.isArray(node_attributes[key])) {
-              for (let index = 0; index < node_attributes[key].length; index++) {
-                const element = node_attributes[key][index];
-                if (parseInt(element) <= parseInt(constraint.value as string)) {
-                  return true;
-                }
-              }
-            } else {
-              if (parseInt(node_attributes[key]) <= parseInt(constraint.value as string)) {
-                return true;
-              }
-            }
-          }
-          return false;
-        default:
-          debug(`Node operator not handled ${constraint.operator}`);
-          return false;
-      }
-    }
-  }
-
+  
   storeRecords(records: Record[]): void {
     debug(`(6) Storing records...`);
     // store new records in current edge
     this.records = records;
     // will update records if any constraints are found
-    this.applyNodeConstraints();
     debug(`(7) Updating nodes based on edge records...`);
     this.updateNodesCuries(records);
   }
@@ -575,5 +402,84 @@ export default class QEdge {
 
   getReversedPredicate(predicate: string): string {
     return predicate ? utils.biolink.reverse(predicate) : undefined;
+  }
+
+  meetsConstraints(kgEdge: TrapiKGEdge, kgSub: TrapiKGNode, kgObj: TrapiKGNode): boolean {
+    // edge constraints
+    if (this.constraints) {
+      for (let constraint of this.constraints) {
+        let meets = this._meetsConstraint(constraint, kgEdge.attributes);
+        if (constraint.not) meets = !meets;
+        if (!meets) return false;
+      }
+    }
+
+    // node constraints not fully tested yet (may be some weird behavior with subclsasing)
+    // subject constraints
+    if (this.subject.constraints) {
+      for (let constraint of this.subject.constraints) {
+        let meets = this._meetsConstraint(constraint, kgSub.attributes);
+        if (constraint.not) meets = !meets;
+        if (!meets) return false;
+      }
+    }
+
+    // object constraints
+    if (this.object.constraints) {
+      for (let constraint of this.object.constraints) {
+        let meets = this._meetsConstraint(constraint, kgObj.attributes);
+        if (constraint.not) meets = !meets;
+        if (!meets) return false;
+      }
+    }
+
+    return true;
+  }
+
+  _meetsConstraint(constraint: TrapiAttributeConstraint, attributes?: TrapiAttribute[]): boolean {
+    const edge_attribute = attributes?.find(x => x.attribute_type_id == constraint.id)?.value as any;
+    const constraintValue = constraint.value as any;
+    if (!edge_attribute) {
+      return false;
+    }
+    switch (constraint.operator) {
+      case '==':
+        const array1 = utils.toArray(edge_attribute);
+        const array2 = utils.toArray(constraintValue);
+        for (let a1 of array1) {
+          for (let a2 of array2) {
+            if (a1 == a2) return true;
+          }
+        }
+        return false;
+      case '===':
+        if (Array.isArray(edge_attribute) && Array.isArray(constraintValue)) {
+          if (edge_attribute.length !== constraintValue.length) return false;
+          for (let i = 0; i < edge_attribute.length; i++) {
+            if (edge_attribute[i] !== constraintValue[i]) return false;
+          }
+          return true;
+        }
+        return edge_attribute === constraintValue;
+      case 'matches':
+        if (typeof constraintValue === 'string') {
+          let regexStr = constraintValue;
+          // make sure regex matches the whole string
+          if (constraintValue.at(0) !== '^') regexStr = '^' + regexStr;
+          if (constraintValue.at(constraintValue.length - 1) !== '$') regexStr += '$';
+          let regex = new RegExp(regexStr);
+          for (let attr of utils.toArray(edge_attribute)) {
+            if (regex.test(attr)) return true;
+          }
+        }
+        return false;
+      case '>':
+        return edge_attribute > constraintValue;
+      case '<':
+        return edge_attribute < constraintValue;
+      default:
+        debug(`Node operator not handled ${constraint.operator}`);
+        return false;
+    }
   }
 }

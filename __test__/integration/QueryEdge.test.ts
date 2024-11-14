@@ -1,5 +1,8 @@
 import QNode from '../../src/query_node';
 import QEdge from '../../src/query_edge';
+import KGNode from '../../src/graph/kg_node';
+import KGEdge from '../../src/graph/kg_edge';
+import KnowledgeGraph from '../../src/graph/knowledge_graph';
 
 describe('Testing QueryEdge Module', () => {
   const gene_node1 = new QNode({ id: 'n1', categories: ['Gene'], ids: ['NCBIGene:1017'] });
@@ -197,4 +200,20 @@ describe('Testing QueryEdge Module', () => {
     // NOTE: recently changed from not.toEqual, because an unfrozen edge *should* equal its original?
     expect(qEdge1.getHashedEdgeRepresentation()).toEqual(qEdge2.getHashedEdgeRepresentation());
   });
+
+  test('meetsConstraints', () => {
+    const qEdge = new QEdge({ id: 'e01', subject: type_node, object: disease1_node, predicates: ['biolink:treats'], attribute_constraints: [{ name: 'publications', id: 'biolink:publications', operator: '==', value: 'PMID:9248614', not: false }] });
+    const kgNode1 = new KGNode("node1", { label: "node1", semanticType: [], names: [], curies: [], primaryCurie: "node1", qNodeID: "e01"});
+    const kgNode2 = new KGNode("node2", { label: "node2", semanticType: [], names: [], curies: [], primaryCurie: "node2", qNodeID: "e01"});
+    const kgEdge1 = new KGEdge("edge1", {object: "node1", subject: "node2", predicate: "biolink:treats"});
+    const kgEdge2 = new KGEdge("edge2", {object: "node1", subject: "node2", predicate: "biolink:treats"});
+    kgEdge1.addPublication("PMID:9248614");
+    kgEdge1.addPublication("PMID:1234567");
+    kgEdge2.addPublication("PMID:7614243");
+    kgEdge2.addPublication("PMID:1234567");
+    const graph = new KnowledgeGraph();
+    graph.update({ nodes: { node1: kgNode1, node2: kgNode2 }, edges: { edge1: kgEdge1, edge2: kgEdge2 } });
+    expect(qEdge.meetsConstraints(graph.edges["edge1"], graph.nodes["node1"], graph.nodes["node2"])).toBeTruthy();
+    expect(qEdge.meetsConstraints(graph.edges["edge2"], graph.nodes["node1"], graph.nodes["node2"])).toBeFalsy();
+  })
 });

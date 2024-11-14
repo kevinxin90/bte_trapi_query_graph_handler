@@ -56,6 +56,7 @@ export default class TRAPIQueryHandler {
   auxGraphs: TrapiAuxGraphCollection;
   finalizedResults: TrapiResult[];
   queryGraph: TrapiQueryGraph;
+  queryGraphHandler: QueryGraph;
   constructor(
     options: QueryHandlerOptions = {},
     smartAPIPath: string = undefined,
@@ -222,6 +223,9 @@ export default class TRAPIQueryHandler {
       [edgeID: string]: { [originalSubject: string]: { [originalObject: string]: string /* re-bound edge ID */ } };
     } = {};
     const edgesIDsByAuxGraphID = {};
+    const supportGraphsByEdgeID: {
+      [edgeID: string]: { [originalSubject: string]: { [originalObject: string]: string /*aux/support graph ID */ } };
+    } = {};
     Object.entries(this.bteGraph.edges).forEach(([edgeID, bteEdge]) => {
       if (edgeID.includes('expanded')) return;
       const combos: { subject: string; object: string; supportGraph: string[] }[] = [];
@@ -257,6 +261,10 @@ export default class TRAPIQueryHandler {
           suffix += 1;
         }
         const supportGraphID = `support${suffix}-${boundEdgeID}`;
+        if (!supportGraphsByEdgeID[edgeID]) supportGraphsByEdgeID[edgeID] = {};
+        if (!supportGraphsByEdgeID[edgeID][subject]) supportGraphsByEdgeID[edgeID][subject] = {};
+        supportGraphsByEdgeID[edgeID][subject][object] = supportGraphID;
+
         auxGraphs[supportGraphID] = { edges: supportGraph, attributes: [] };
         if (!edgesIDsByAuxGraphID[supportGraphID]) {
           edgesIDsByAuxGraphID[supportGraphID] = new Set();
@@ -308,7 +316,40 @@ export default class TRAPIQueryHandler {
                     newBindings.push(binding);
                     boundIDs.add(binding.id);
                   }
-                } else if (!boundIDs.has(edgesToRebind[binding.id]?.[subId]?.[objId])) {
+                }
+                // we only want to include support graphs that meet constraints (in case there is another QEdge using this same KGEdge)
+                else if (
+                  this.queryGraph.edges[qEdgeID].attribute_constraints || 
+                  this.queryGraph.nodes[this.queryGraph.edges[qEdgeID].subject].constraints || 
+                  this.queryGraph.nodes[this.queryGraph.edges[qEdgeID].object].constraints
+                ) {
+                  const oldBoundEdge = this.bteGraph.edges[edgesToRebind[binding.id]?.[subId]?.[objId]];
+                  const newBoundEdge = `${edgesToRebind[binding.id][subId][objId]}-constrained_by_${qEdgeID}`;
+                  if (!boundIDs.has(newBoundEdge)) {
+                    this.bteGraph.edges[newBoundEdge] = new KGEdge(newBoundEdge, {
+                      predicate: oldBoundEdge.predicate,
+                      subject: oldBoundEdge.subject,
+                      object: oldBoundEdge.object,
+                    });
+                    this.bteGraph.edges[newBoundEdge].addAdditionalAttributes('biolink:support_graphs', []);
+                    this.bteGraph.edges[newBoundEdge].addAdditionalAttributes('biolink:knowledge_level', 'logical_entailment')
+                    this.bteGraph.edges[newBoundEdge].addAdditionalAttributes('biolink:agent_type', 'automated_agent')
+                    this.bteGraph.edges[newBoundEdge].addSource([
+                      {
+                        resource_id: this.options.provenanceUsesServiceProvider
+                          ? 'infores:service-provider-trapi'
+                          : 'infores:biothings-explorer',
+                        resource_role: 'primary_knowledge_source',
+                      },
+                    ]);
+                    boundIDs.add(newBoundEdge);
+                    newBindings.push({...binding, id: newBoundEdge });
+                    resultBoundEdgesWithAuxGraphs.add(newBoundEdge);
+                  }
+                  (this.bteGraph.edges[newBoundEdge].attributes['biolink:support_graphs'] as Set<string>).add(supportGraphsByEdgeID[binding.id][subId][objId]);
+                  edgesIDsByAuxGraphID[supportGraphsByEdgeID[binding.id][subId][objId]].add(newBoundEdge);
+                }
+                else if (!boundIDs.has(edgesToRebind[binding.id]?.[subId]?.[objId])) {
                   newBindings.push({ id: edgesToRebind[binding.id]?.[subId]?.[objId], attributes: [] });
                   boundIDs.add(edgesToRebind[binding.id]?.[subId]?.[objId]);
                   resultBoundEdgesWithAuxGraphs.add(edgesToRebind[binding.id]?.[subId]?.[objId]);
@@ -471,6 +512,7 @@ export default class TRAPIQueryHandler {
         }
       }
     }
+    this.queryGraphHandler = new QueryGraph(queryGraph, this.options.schema, this._queryIsPathfinder());
   }
 
   _initializeResponse(): void {
@@ -480,11 +522,19 @@ export default class TRAPIQueryHandler {
     this.bteGraph.subscribe(this.knowledgeGraph);
   }
 
-  async _processQueryGraph(queryGraph: TrapiQueryGraph): Promise<QEdge[]> {
-    const queryGraphHandler = new QueryGraph(queryGraph, this.options.schema, this._queryIsPathfinder());
-    const queryEdges = await queryGraphHandler.calculateEdges();
-    this.logs = [...this.logs, ...queryGraphHandler.logs];
-    return queryEdges;
+  async _processQueryGraph(): Promise<QEdge[]> {
+    try {
+      const queryEdges = await this.queryGraphHandler.calculateEdges();
+      this.logs = [...this.logs, ...this.queryGraphHandler.logs];
+      return queryEdges;
+    } catch (err) {
+      if (err instanceof InvalidQueryGraphError || err instanceof SRINodeNormFailure) {
+        throw err;
+      } else {
+        console.log(err.stack);
+        throw new InvalidQueryGraphError();
+      }
+    }
   }
 
   async _edgesSupported(qEdges: QEdge[], metaKG: MetaKG): Promise<boolean> {
@@ -611,6 +661,9 @@ export default class TRAPIQueryHandler {
       this.logs.push(new LogEntry('WARNING', null, message).getLog());
       return;
     }
+    if (await this._checkContraints()) {
+      return;
+    }
     const inferredQueryHandler = new InferredQueryHandler(
       this,
       this.queryGraph,
@@ -647,7 +700,7 @@ export default class TRAPIQueryHandler {
         new LogEntry(
           'ERROR',
           null,
-          `BTE does not currently support any type of constraint. Your query Terminates.`,
+          `BTE does not currently support constraints with creative mode. Your query Terminates.`,
         ).getLog(),
       );
       return true;
@@ -739,11 +792,8 @@ export default class TRAPIQueryHandler {
       );
     }
 
-    const queryEdges = await this._processQueryGraph(this.queryGraph);
-    // TODO remove this when constraints implemented
-    if (await this._checkContraints()) {
-      return;
-    }
+    const queryEdges = await this._processQueryGraph();
+
     if ((this.options.smartAPIID || this.options.teamName) && Object.values(this.queryGraph.edges).length > 1) {
       const message = 'smartAPI/team-specific endpoints only support single-edge queries. Your query terminates.';
       this.logs.push(new LogEntry('WARNING', null, message).getLog());
@@ -790,10 +840,11 @@ export default class TRAPIQueryHandler {
 
     // update query graph
     this.bteGraph.update(manager.getRecords());
+    this.bteGraph.notify();
     //update query results
     await this.trapiResultsAssembler.update(
       manager.getOrganizedRecords(),
-      !(this.options.smartAPIID || this.options.teamName),
+      !(this.options.smartAPIID || this.options.teamName)
     );
     this.logs = [...this.logs, ...this.trapiResultsAssembler.logs];
     // fix subclassing

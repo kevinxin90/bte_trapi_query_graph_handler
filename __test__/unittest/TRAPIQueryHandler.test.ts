@@ -35,7 +35,8 @@ describe('test TRAPIQueryHandler methods', () => {
       edges: {},
     };
     try {
-      await handler._processQueryGraph(invalidQueryGraph);
+      handler.setQueryGraph(invalidQueryGraph);
+      await handler._processQueryGraph();
     } catch (err) {
       expect(err).toBeInstanceOf(InvalidQueryGraphError);
     }
