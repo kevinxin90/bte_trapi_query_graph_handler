@@ -1,5 +1,5 @@
 import axios from 'axios';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 const debug = Debug('bte:biothings-explorer-trapi:pfocr');
 import _ from 'lodash';
 import { LogEntry, StampedLog, intersection, biolink, toArray, removeBioLinkPrefix } from '@biothings-explorer/utils';

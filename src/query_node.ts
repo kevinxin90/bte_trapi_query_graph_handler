@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import _ from 'lodash';
 import * as utils from '@biothings-explorer/utils';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import InvalidQueryGraphError from './exceptions/invalid_query_graph_error';
 import { SRIBioEntity } from 'biomedical_id_resolver';
 const debug = Debug('bte:biothings-explorer-trapi:QNode');

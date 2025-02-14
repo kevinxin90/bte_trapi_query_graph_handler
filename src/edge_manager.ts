@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { LogEntry, StampedLog } from '@biothings-explorer/utils';
 import BTEError from './exceptions/bte_error';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 const debug = Debug('bte:biothings-explorer-trapi:edge-manager');
 import * as config from './config';
 import BatchEdgeQueryHandler, { BatchEdgeQueryOptions } from './batch_edge_query';

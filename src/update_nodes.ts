@@ -1,5 +1,5 @@
 import { resolveSRI } from 'biomedical_id_resolver';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import { ResolverInput, SRIResolverOutput } from 'biomedical_id_resolver';
 import { Record } from '@biothings-explorer/api-response-transform';
 import QEdge from './query_edge';

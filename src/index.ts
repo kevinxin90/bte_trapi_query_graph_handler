@@ -4,7 +4,7 @@ import QueryGraph from './query_graph';
 import KnowledgeGraph from './graph/knowledge_graph';
 import TrapiResultsAssembler from './results_assembly/query_results';
 import InvalidQueryGraphError from './exceptions/invalid_query_graph_error';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 const debug = Debug('bte:biothings-explorer-trapi:main');
 import Graph from './graph/graph';
 import EdgeManager from './edge_manager';

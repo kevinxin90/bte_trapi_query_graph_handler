@@ -1,4 +1,4 @@
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import axios from 'axios';
 const debug = Debug('bte:biothings-explorer-trapi:score');
 import os from 'os';

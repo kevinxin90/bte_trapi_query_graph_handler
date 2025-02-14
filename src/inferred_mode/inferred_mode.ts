@@ -1,4 +1,4 @@
-import Debug from 'debug';
+import { Debug, withDebugContext } from "@biothings-explorer/utils"
 import {
   biolink,
   getUnique,
@@ -648,7 +648,8 @@ export default class InferredQueryHandler {
         handler.setQueryGraph(queryGraph);
         const failedHandlerLogs: { [index: number]: StampedLog[] } = {};
         try {
-          await timeoutPromise(handler.query(AbortSignal.timeout(this.CREATIVE_TIMEOUT)), this.CREATIVE_TIMEOUT);
+          const query = withDebugContext(` Template-${i + 1}`, handler.query.bind(handler));
+          await timeoutPromise(query(AbortSignal.timeout(this.CREATIVE_TIMEOUT)), this.CREATIVE_TIMEOUT);
         } catch (error) {
           handler.logs.forEach((log) => {
             log.message = `[Template-${i + 1}]: ${log.message}`;

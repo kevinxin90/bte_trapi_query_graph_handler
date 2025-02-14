@@ -1,4 +1,4 @@
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import {
   TrapiAttribute,
   TrapiKnowledgeGraph,

@@ -1,6 +1,6 @@
 import kg_edge from './kg_edge';
 import kg_node from './kg_node';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import { LogEntry, StampedLog } from '@biothings-explorer/utils';
 import KGNode from './kg_node';
 import KGEdge from './kg_edge';

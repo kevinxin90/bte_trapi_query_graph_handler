@@ -13,7 +13,7 @@ import InferredQueryHandler from './inferred_mode';
 import { scaled_sigmoid, inverse_scaled_sigmoid } from '../results_assembly/score';
 import * as utils from '@biothings-explorer/utils';
 import { LogEntry, StampedLog, Telemetry, removeBioLinkPrefix } from '@biothings-explorer/utils';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import generateTemplates from './pf_template_generator';
 import { enrichTrapiResultsWithPfocrFigures } from '../results_assembly/pfocr';
 const debug = Debug('bte:biothings-explorer-trapi:pathfinder');

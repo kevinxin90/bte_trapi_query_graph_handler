@@ -2,7 +2,7 @@ import QEdge from './query_edge';
 import InvalidQueryGraphError from './exceptions/invalid_query_graph_error';
 import * as utils from '@biothings-explorer/utils';
 import { LogEntry, StampedLog } from '@biothings-explorer/utils';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import QNode from './query_node';
 import { resolveSRI } from 'biomedical_id_resolver';
 import _ from 'lodash';

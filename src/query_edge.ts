@@ -1,5 +1,5 @@
 import helper from './helper';
-import Debug from 'debug';
+import { Debug } from "@biothings-explorer/utils";
 import { Record, RecordNode, FrozenRecord } from '@biothings-explorer/api-response-transform';
 import QNode from './query_node';
 import { QNodeInfo } from './query_node';
